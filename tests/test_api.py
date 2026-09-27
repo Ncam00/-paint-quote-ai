@@ -8,7 +8,7 @@ from app.schemas import Assessment
 from app.security import reset_rate_limits
 
 ROOM = json.dumps({"length_m": 4, "width_m": 3.5, "height_m": 2.7})
-PHOTO = [("photos", ("room.jpg", b"fake-image-bytes", "image/jpeg"))]
+PHOTO = {"photo_1": ("room.jpg", b"fake-image-bytes", "image/jpeg")}
 
 
 @pytest.fixture
@@ -53,6 +53,13 @@ def test_rate_limit(client):
 
 
 def test_bad_file_type_rejected(client):
-    files = [("photos", ("notes.txt", b"hi", "text/plain"))]
+    files = {"photo_1": ("notes.txt", b"hi", "text/plain")}
     r = client.post("/quote", data={"room": ROOM}, files=files, headers={"X-API-Key": "test-key"})
     assert r.status_code == 400
+
+
+def test_multiple_photos_and_blank_optional(client):
+    files = {"photo_1": ("a.jpg", b"x", "image/jpeg"), "photo_2": ("b.png", b"y", "image/png")}
+    r = client.post("/quote", data={"room": ROOM, "photo_3": ""}, files=files,
+                    headers={"X-API-Key": "test-key"})
+    assert r.status_code == 200
