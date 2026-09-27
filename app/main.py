@@ -26,7 +26,6 @@ if origins:
 
 ALLOWED = {"image/jpeg", "image/png", "image/webp"}
 MAX_BYTES = 5 * 1024 * 1024
-MAX_PHOTOS = 5
 
 
 @app.get("/health")
@@ -37,16 +36,16 @@ def health():
 @app.post("/quote", response_model=Quote, dependencies=[Depends(require_api_key)])
 async def quote(
     room: str = Form(..., description='JSON, e.g. {"length_m":4,"width_m":3.5,"height_m":2.7}'),
-    photos: list[UploadFile] = File(...),
+    photo_1: UploadFile = File(..., description="Room photo (required)"),
+    photo_2: UploadFile | None = File(None, description="Optional extra angle"),
+    photo_3: UploadFile | None = File(None, description="Optional extra angle"),
 ):
     try:
         room_input = RoomInput.model_validate_json(room)
     except ValidationError as e:
         raise HTTPException(422, e.errors(include_url=False))
 
-    if not 1 <= len(photos) <= MAX_PHOTOS:
-        raise HTTPException(400, f"Send 1–{MAX_PHOTOS} photos")
-
+    photos = [p for p in (photo_1, photo_2, photo_3) if p is not None and p.filename]
     images = []
     for p in photos:
         if p.content_type not in ALLOWED:
