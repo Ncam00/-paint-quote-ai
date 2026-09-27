@@ -4,8 +4,16 @@ import os
 from anthropic import Anthropic
 from .schemas import Assessment
 
-client = Anthropic()  # reads ANTHROPIC_API_KEY
-MODEL = os.getenv("MODEL", "claude-sonnet-5")
+_client: Anthropic | None = None
+
+
+def get_client() -> Anthropic:
+    """Created on first use, so the app (and tests) start without a key."""
+    global _client
+    if _client is None:
+        _client = Anthropic()  # reads ANTHROPIC_API_KEY
+    return _client
+
 
 PROMPT = """You are helping an Australian/New Zealand house painter quote an interior room.
 Look at the photos and assess ONLY what you can see:
@@ -31,8 +39,8 @@ def assess_room(images: list[tuple[bytes, str]]) -> Assessment:
     ]
     content.append({"type": "text", "text": PROMPT})
 
-    resp = client.messages.create(
-        model=MODEL,
+    resp = get_client().messages.create(
+        model=os.getenv("MODEL", "claude-sonnet-5"),
         max_tokens=1024,
         tools=[TOOL],
         tool_choice={"type": "tool", "name": "record_assessment"},
