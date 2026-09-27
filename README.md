@@ -1,27 +1,38 @@
 # Paint Quote AI
 
+![tests](https://github.com/Ncam00/-paint-quote-ai/actions/workflows/tests.yml/badge.svg)
+
 Upload room photos + dimensions → get a draft painting quote.
 The AI assesses the photos (condition, doors/windows, prep work);
 deterministic Python does all area, paint and price maths.
 
-## Run it
+## Run it locally
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # add your Anthropic API key
-pytest                 # pricing tests, no API key needed
+cp .env.example .env   # add your Anthropic key + a SERVICE_API_KEY
+pytest                 # no API key needed
 uvicorn app.main:app --reload
 ```
-Open http://localhost:8000/docs to try `/quote` in the browser.
+Open http://localhost:8000/docs, click **Authorize**, enter your `SERVICE_API_KEY`, then try `/quote`.
 
-## Try with curl
+## Call the API
 ```bash
-curl -X POST localhost:8000/quote \
+curl -X POST https://YOUR-URL/quote \
+  -H "X-API-Key: $SERVICE_API_KEY" \
   -F 'room={"length_m":4,"width_m":3.5,"height_m":2.7,"include_ceiling":true,"region":"AU"}' \
   -F photos=@room1.jpg -F photos=@room2.jpg
 ```
 
-## Next steps
-- Replace the rates in `app/pricing.py` with real painters' numbers
-- Deploy (Render/Railway/Fly) and call `/quote` from the Base44 app
-- Save quotes to Postgres; add PDF export
+## Security
+- Every `/quote` call needs the `X-API-Key` header (`/health` is open)
+- Rate limited per key (`RATE_LIMIT_PER_HOUR`, default 20)
+- CORS off unless `ALLOWED_ORIGINS` is set; call it server-side where possible
+
+## Deploy (Render)
+1. render.com → **New → Blueprint** → pick this repo (uses `render.yaml`)
+2. Enter `ANTHROPIC_API_KEY` when prompted; leave `ALLOWED_ORIGINS` blank
+3. Render generates `SERVICE_API_KEY` — copy it into your Base44 app's secrets
+4. Check `https://YOUR-URL/health` returns `{"ok": true}`
+
+Every push to `main` redeploys automatically.
