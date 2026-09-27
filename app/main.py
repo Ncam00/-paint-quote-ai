@@ -24,6 +24,33 @@ if origins:
         allow_headers=["X-API-Key", "Content-Type"],
     )
 
+def _mark_file_fields(node):
+    """Make /docs show real file pickers (Swagger UI needs format: binary)."""
+    if isinstance(node, dict):
+        variants = node.get("anyOf")
+        if variants and any(v.get("contentMediaType") for v in variants):
+            node.pop("anyOf")
+            node.update({"type": "string", "format": "binary"})
+        if node.get("contentMediaType") == "application/octet-stream":
+            node["format"] = "binary"
+        for v in node.values():
+            _mark_file_fields(v)
+    elif isinstance(node, list):
+        for v in node:
+            _mark_file_fields(v)
+
+
+_default_openapi = app.openapi
+
+
+def _openapi_with_file_pickers():
+    if not app.openapi_schema:
+        _mark_file_fields(_default_openapi())
+    return app.openapi_schema
+
+
+app.openapi = _openapi_with_file_pickers
+
 ALLOWED = {"image/jpeg", "image/png", "image/webp"}
 MAX_BYTES = 5 * 1024 * 1024
 
