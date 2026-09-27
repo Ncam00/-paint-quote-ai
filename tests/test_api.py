@@ -63,3 +63,10 @@ def test_multiple_photos_and_blank_optional(client):
     r = client.post("/quote", data={"room": ROOM, "photo_3": ""}, files=files,
                     headers={"X-API-Key": "test-key"})
     assert r.status_code == 200
+
+
+def test_docs_show_file_pickers(client):
+    schema = client.get("/openapi.json").json()["components"]["schemas"]
+    body = next(v for k, v in schema.items() if "quote" in k.lower())["properties"]
+    for name in ("photo_1", "photo_2", "photo_3"):
+        assert body[name]["format"] == "binary"
