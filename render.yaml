@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: paint-quote-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: MODEL
+        value: claude-sonnet-5
+      - key: RATE_LIMIT_PER_HOUR
+        value: "20"
+      - key: SERVICE_API_KEY
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
