@@ -21,7 +21,7 @@ Open http://localhost:8000/docs, click **Authorize**, enter your `SERVICE_API_KE
 curl -X POST https://YOUR-URL/quote \
   -H "X-API-Key: $SERVICE_API_KEY" \
   -F 'room={"length_m":4,"width_m":3.5,"height_m":2.7,"include_ceiling":true,"region":"AU"}' \
-  -F photos=@room1.jpg -F photos=@room2.jpg
+  -F photo_1=@room1.jpg -F photo_2=@room2.jpg   # photo_2/photo_3 optional
 ```
 
 ## Security
