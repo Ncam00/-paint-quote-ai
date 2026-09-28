@@ -70,3 +70,25 @@ def test_docs_show_file_pickers(client):
     body = next(v for k, v in schema.items() if "quote" in k.lower())["properties"]
     for name in ("photo_1", "photo_2", "photo_3"):
         assert body[name]["format"] == "binary"
+
+
+PDF_BODY = {
+    "line_items": [
+        {"description": "Wall painting (2 coats)", "quantity": 34.4, "unit": "m²", "unit_price": 16.1, "total": 0},
+        {"description": "Paint", "quantity": 6, "unit": "L", "unit_price": 18, "total": 0},
+    ],
+    "business_name": "Smith & Co Painting",
+    "client_name": "Jane <Doe>",
+    "job_address": "12 Example St, Sydney",
+}
+
+
+def test_pdf_needs_key(client):
+    assert client.post("/quote/pdf", json=PDF_BODY).status_code == 401
+
+
+def test_pdf_returns_pdf(client):
+    r = client.post("/quote/pdf", json=PDF_BODY, headers={"X-API-Key": "test-key"})
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "application/pdf"
+    assert r.content.startswith(b"%PDF")
