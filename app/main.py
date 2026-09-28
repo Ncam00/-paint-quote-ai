@@ -4,10 +4,11 @@ load_dotenv()
 import os
 
 import anthropic
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
+from .pdf import PdfRequest, build_pdf
 from .pricing import build_quote
 from .schemas import Quote, RoomInput
 from .security import require_api_key
@@ -90,3 +91,12 @@ async def quote(
         raise HTTPException(502, "AI service unavailable, try again shortly")
 
     return build_quote(room_input, assessment)
+
+
+@app.post("/quote/pdf", dependencies=[Depends(require_api_key)],
+          response_class=Response, responses={200: {"content": {"application/pdf": {}}}})
+def quote_pdf(req: PdfRequest):
+    """Turn a quote (after the painter edits it) into a PDF for the homeowner. No AI cost."""
+    safe = "".join(c for c in req.client_name if c.isalnum() or c in " -_").strip() or "quote"
+    return Response(build_pdf(req), media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="Quote - {safe}.pdf"'})
